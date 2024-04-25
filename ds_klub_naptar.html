@@ -1,0 +1,208 @@
+<style>
+.simple-calendar-container {
+    display: flex;
+    flex-direction: column;  /* This will stack children vertically */
+    justify-content: center;
+    align-items: center;  /* Centers the calendars horizontally */
+    margin-top: 0px;
+}
+
+.simple-calendar {
+    border: 1px solid #000;
+    width: 500px;
+    width: 100%; /* Make calendar width responsive */
+    margin-bottom: 20px;  /* Adds some space between the months */
+}
+
+.simple-calendar-header {
+    font-size: 1.5em;
+    text-align: center;
+    padding: 5px 0;
+    background-color: #1515290F;
+}
+
+.simple-calendar-days-of-week, .simple-calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+}
+
+.simple-calendar-days-of-week div, .simple-calendar-days div {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: center;
+    cursor: default; /* No cursor pointer for non-linked days */
+}
+
+.simple-calendar-days div.linked-day {
+    cursor: pointer; /* Pointer only for linked days */
+}
+
+.simple-calendar-days div.linked-day:hover {
+    background-color: #20D181; /* Green hover background for linked days */
+}
+
+.simple-calendar-days div.past-day {
+    background-color: #1515290F; /* Grey background for past days */
+    color: #808080; /* Grey text for past days */
+}
+
+.simple-calendar-days div.today {
+    border: 1px dotted black; /* Dotted border for today */
+}
+
+.simple-calendar-days .linked-day {
+    cursor: pointer;
+    position: relative; /* Needed for tooltip positioning */
+}
+
+.simple-calendar-days .linked-day:hover::after {
+    content: attr(data-tooltip); /* Tooltip content */
+    position: absolute;
+    white-space: nowrap;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: black;
+    color: white;
+    padding: 5px;
+    font-size: 12px;
+    border-radius: 4px;
+    z-index: 1;
+}
+
+.simple-calendar-days .előadás {
+    background-color: #41905C; /* Green for előadás */
+}
+
+.simple-calendar-days .verseny {
+    background-color: #6A99F2; /* Light Blue for verseny */
+}
+
+.simple-calendar-days .klubtalálkozó {
+    background-color: #D0DF78; /* Dark Green for extra */
+}
+
+#eventData {
+    display: none; /* This will make the div invisible and not take up any space in the layout */
+}
+
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var divContent = document.getElementById('eventData').innerHTML;
+    var cleanContent = divContent.replace(/<br>/g, '');
+    var formattedJson = '[' + cleanContent.trim().replace(/,\s*$/, '') + ']';
+    var events = JSON.parse(formattedJson)[0];
+
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const today = new Date(currentYear, currentMonth, now.getDate());
+
+    // Helper function to render each month
+    function renderMonth(month, year, containerId) {
+        const monthName = new Date(year, month).toLocaleString('hu-HU', { month: 'long' });
+        const headerDateString = `${year}. ${monthName}`;
+        let daysHTML = `<div class="simple-calendar-header"><span>${headerDateString}</span></div>`;
+        daysHTML += '<div class="simple-calendar-days-of-week"><div>H</div><div>K</div><div>SZ</div><div>CS</div><div>P</div><div>SZ</div><div>V</div></div>';
+        daysHTML += '<div class="simple-calendar-days">';
+
+        const firstDayOfMonth = new Date(year, month, 1);
+        const dayOfWeek = firstDayOfMonth.getDay() === 0 ? 6 : firstDayOfMonth.getDay() - 1;
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        for (let i = 0; i < dayOfWeek; i++) {
+            daysHTML += '<div></div>';
+        }
+
+        for (let i = 1; i <= daysInMonth; i++) {
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+            const date = new Date(year, month, i);
+            const isPast = date < today;
+            const isToday = date.toDateString() === today.toDateString();
+            let dayClass = isPast ? 'past-day' : '';
+            dayClass += isToday ? ' today' : '';
+            
+            const event = events.find(e => e.date === dateStr);
+            if (event) {
+                daysHTML += `<div class="linked-day ${event.type}" data-tooltip="${event.speaker} | ${event.title}" onclick="window.open('${event.link}', '_blank')">${i}</div>`;
+            } else {
+                daysHTML += `<div class="${dayClass}">${i}</div>`;
+            }
+        }
+
+        daysHTML += '</div>';
+        document.getElementById(containerId).innerHTML = daysHTML;
+    }
+
+    // Render the current and next months
+    renderMonth(currentMonth, currentYear, "currentMonth");
+    renderMonth(currentMonth + 1, currentYear, "nextMonth");
+});
+
+</script>
+
+<div id="calendar" class="simple-calendar-container">
+    <!-- Container for the current month -->
+    <div id="currentMonth" class="simple-calendar">
+        <!-- Calendar for the current month will be dynamically filled here -->
+    </div>
+    <!-- Container for the next month -->
+    <div id="nextMonth" class="simple-calendar">
+        <!-- Calendar for the next month will be dynamically filled here -->
+    </div>
+</div>
+
+<div id="eventData">[
+{
+"type": "el\u0151ad\u00e1s",
+"date": "2024-04-10",
+"title": "AutoML Bemutat\u00f3 Python-ban: automatiz\u00e1ljuk a Machine Learning-et!",
+"speaker": "Kov\u00e1cs Gyula",
+"link": "https://dataklub.hu/eloadasok/automl/"
+},
+{
+"type": "verseny",
+"date": "2024-04-21",
+"title": "[DS VERSENY][HAT\u00c1RID\u0150] 4. FORDUL\u00d3",
+"speaker": "-",
+"link": "https://dataklub.hu/leckek/4-fordulo-extra-elemzesi-feladatok-ii/"
+},
+{
+"type": "verseny",
+"date": "2024-04-22",
+"title": "[DS VERSENY][\u00daJ FORDUL\u00d3] 5. FORDUL\u00d3: ADATVIZUALIZ\u00c1CI\u00d3S \u00c9S EXTRA SZORGALMI FELADATOK",
+"speaker": "-",
+"link": "https://dataklub.hu/verseny/"
+},
+{
+"type": "verseny",
+"date": "2024-05-12",
+"title": "[DS VERSENY][HAT\u00c1RID\u0150] 5. FORDUL\u00d3",
+"speaker": "-",
+"link": "https://dataklub.hu/verseny/"
+},
+{
+"type": "el\u0151ad\u00e1s",
+"date": "2024-05-15",
+"title": "Statisztika K\u00f6z\u00e9rthet\u0151en, 1. R\u00e9sz: Nevezetes Eloszl\u00e1sok",
+"speaker": "Szab\u00f3 D\u00f3ra, PhD (Senior Data Scientist, Shapr3D)",
+"link": "https://dataklub.hu/eloadasok/statisztika-eloszlasok/"
+},
+{
+"type": "klubtal\u00e1lkoz\u00f3",
+"date": "2024-06-05",
+"title": "DS Klubtal\u00e1lkoz\u00f3 Budapesten: Verseny Prezik, Eredm\u00e9nyhirdet\u00e9s, Networking",
+"speaker": "a verseny d\u00f6nt\u0151sei",
+"link": "https://dataklub.hu/eloadasok/klubtalalkozo-2/"
+},
+{
+"type": "el\u0151ad\u00e1s",
+"date": "2024-06-12",
+"title": "Machine Learning Algoritmusok Ki\u00e9rt\u00e9kel\u00e9se: Mutat\u00f3k, M\u00e9r\u0151sz\u00e1mok, Fontos \u00c9rt\u00e9kek",
+"speaker": "Windhager Eszter (Head of Data Science, Starschema)",
+"link": "https://dataklub.hu/eloadasok/ml-kiertekelesek/"
+}
+]</div>
+
